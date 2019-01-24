@@ -6,13 +6,47 @@
             valtype: {value:"s"},
             mac: {value:""},
             ioid: {value:""},
-            name: {value:""}
+            name: {value:""},
+            srvaddress: {value:"localhost"}
         },
         inputs:1,
         outputs:0,
         icon: "face.png",
+        align: "right",
         label: function() {
             return this.name||"Ampio OUT";
+        },
+        oneditprepare: function(){
+            var node = this;
+            var DevTypes;
+            $.getJSON('ampio/devices/types',function(json){
+                DevTypes = json;
+            });
+            function pad (str, max) {
+                str = str.toString();
+                return str.length < max ? pad("0" + str, max) : str;
+            }
+            function GetDevices(){
+                var ip = $('#node-input-srvaddress').val();
+                $("#node-input-mac").empty();
+                $.getJSON('ampio/devices/list/'+ip, function(data) {
+                        for (var i = 0; i< data.length; i++){
+                            var dev = data[i];
+                            $("<option value='" + dev.user_mac + "'> " + pad(dev.user_mac,4) + " - " + (DevTypes[dev.typ].type) + " (" + atob(dev.name) + ")</option>").appendTo('#node-input-mac');
+                        }
+                        if(node.mac != ""){
+                            $("#node-input-mac").val(node.mac);
+                            $('#node-input-mac').trigger('change');
+                        }
+                    
+                });
+            }
+
+
+            GetDevices();
+            $("#node-input-lookup-devices").on("click",function(){
+                GetDevices();
+            });
         }
     });
 </script>
@@ -26,8 +60,19 @@
         </select>
     </div>
     <div class="form-row">
-        <label for="node-input-mac"><i class="icon-tag"></i> MAC</label>
-        <input type="text" id="node-input-mac" placeholder="ex. 12d3">
+        <label for="node-input-srvaddress"><i class="icon-tag"></i> Server address</label>
+        <input type="text" id="node-input-srvaddress" placeholder="localhost">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mac"><i class="icon-tag"></i> Target device</label>
+        <div style="display: inline-block; position: relative; width: 70%; height: 20px;">
+            <div style="position: absolute; left: 0px; right: 40px;">
+                <select id="node-input-mac" style="width: 100%;"></select>
+            </div>
+            <a id="node-input-lookup-devices" class="editor-button" style="position: absolute; right: 0px; top: 0px;">
+                <i class="fa fa-search"></i>
+            </a>
+        </div>
     </div>
     <div class="form-row" style="display: none;" id="ioid">
         <label for="node-input-ioid"><i class="icon-tag"></i> I/O ID</label>
@@ -37,6 +82,7 @@
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
+    
 
     <script type="text/javascript">
         $("#node-input-valtype").change(function(){
